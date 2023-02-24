@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import "./TicketPage.css";
 
-export default function TicketPage({ history }) {
+const TicketPage = ({ history }) => {
   
   const [plan, setPlan] = useState("")
   const [ccType, setCcType] = useState("")
@@ -18,9 +18,16 @@ export default function TicketPage({ history }) {
 	}, [])
   
   return (   
-    <div className="container">
+    <div className="container ">
       <div>
         <nav className="mb-4 navbar navbar-expand-lg navbar-dark bg-unique hm-gradient">
+          <a href="/routes" style={{borderRadius:'10px',padding:'10px'}}>
+          <button style={{outline:'none',border:'none',padding:'5px 20px',borderRadius:'10px'}}>
+             Back
+            </button>
+
+          </a>
+         
         <div
         style={{
           textalign: "center",
@@ -79,7 +86,7 @@ export default function TicketPage({ history }) {
           </div>
         </nav>
       </div>
-      <div className="tpMain">
+      <div className="tpMain ticket-container">
         <article className="ticket">
           <header className="ticket__wrapper">
             <div className="ticket__header">
@@ -99,22 +106,29 @@ export default function TicketPage({ history }) {
           <div className="ticket__body">
             <section className="ticket__section">
               <p>
-                Your {plan} License plan is started <span> </span>
+                Your <span style={{fontWeight:'700',color:'blue'}}> {plan} </span> License plan is started 
               </p>
             </section>
-            <section className="ticket__section">
+            <section className="ticket__section" style={{display:'flex',alignItemsc:'center',gap:'10px'}}>
+              
+ 
               <h3>CC Type: {ccType}</h3>
+              <img src={`/${ccType}.png`} alt="card" style={{width: "40px",marginTop:'-5px'}}/>
+   
+             
             </section>
             <section className="ticket__section">
-              <h3>Paid Amount: {paidAmount}</h3>
+              <h3>Paid Amount: {parseFloat(paidAmount).toFixed(2)}$</h3>
             </section>
           </div>
 
           <footer className="ticket__footer">
-            <p>Transaction-ID: {transactionId}</p>
+            <p>Transaction-ID: {transactionId.split("_")[1]}</p>
           </footer>
         </article>
       </div>
     </div>
   );
 }
+
+export default TicketPage

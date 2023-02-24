@@ -1,10 +1,15 @@
-import React, {useState, useEffect} from 'react'
+import React, {useState, useEffect,useRef} from 'react'
 import Card from "react-credit-cards";
 import "./PaymentTab.css";
 import jwt_decode from "jwt-decode";
-import { CardElement, useElements, useStripe,Elements } from '@stripe/react-stripe-js'
+import { CardElement, CardNumberElement, useElements, useStripe } from '@stripe/react-stripe-js'
 import axios from 'axios'
 // import { useToasts } from 'react-toast-notifications'
+import constants from '../../constant';
+import Swal from 'sweetalert2/dist/sweetalert2.js'
+import truncateEthAddress from 'truncate-eth-address'
+import 'sweetalert2/src/sweetalert2.scss'
+import { Link } from 'react-router-dom';
 
 import {
   formatCreditCardNumber,
@@ -15,22 +20,59 @@ import {
 import "react-credit-cards/es/styles-compiled.css";
 
 
-export function updateMembership(userId, name) {
-  let apiUrl = 'http://localhost:7008/membership/update'
+export function updateMembership(userId, name,paymentMethod,type,paidAmount) {
+  let apiUrl = `${constants.baseURL}/membership/update`
   return axios.post(apiUrl, {
     userId: userId,
     membershipName: name,
+    paymentMethod:paymentMethod,
+    type:type,
+    amount:paidAmount
   })
 }
 
-const createTransaction = (ccType, paidAmount,paymentMethod) => {
-  let apiUrl = 'http://localhost:7008/transaction/create'
+const createTransaction = (ccType, paidAmount,paymentMethod,userId) => {
+  let apiUrl = `${constants.baseURL}/transaction/create`
   return axios.post(apiUrl, {
     ccType: ccType,
     paidAmount: paidAmount,
-    paymentMethod:paymentMethod
+    paymentMethod:paymentMethod,
+    user_id:userId
   })
 }
+
+
+const createPaymentV2 = (userId,
+  membershipName,
+  type,
+  amount,
+  cardNumber,
+  expiryMonth,
+  expiryYear,
+  cvc) =>{
+
+ try {
+  let apiUrl = `${constants.baseURL}/payment/payment_v2`
+  return axios.post(apiUrl,{
+    userId,
+membershipName,
+type,
+amount,
+cardNumber:cardNumber.replace(/\s+/g, ""),
+expiryMonth:expiryMonth.split('/')[0],
+expiryYear:`20${ expiryYear.split('/')[1]}`,
+cvc
+  })
+ } catch (error) {
+  
+  Swal.fire({
+    title: 'Error!',
+    text: error.message,
+    icon: 'error',
+    confirmButtonText: 'OK'
+  })
+ }
+  }
 
 
 
@@ -54,13 +96,14 @@ const CARD_OPTIONS = {
   }
 }
 
-export default function PaymentForm() {
+const PaymentForm = () => {
+  
 
   // const { addToast } = useToasts()
   const [success, setSuccess] = useState(false)
   const stripe = useStripe()
   const elements = useElements()
-
+const [paymentLoading, setPaymentLoading] = useState(false)
   const [userId, setUserId] = useState("")
   const [number, setNumber] = useState("")
   const [name, setName] = useState("")
@@ -81,25 +124,88 @@ export default function PaymentForm() {
 
   const [cardType, setCardType] = useState("")
 
-//   useEffect(()=>{
-// const getData = async()=>{
-// try {
-//   const response = await axios.post("http://localhost:7008/payment/create")
 
-//   setCustomer(response?.data?.customer);
-//     setClientSecret(response?.data?.paymentIntent?.client_secret)
-// } catch (error) {
-//   console.log(error?.message);
-// }
-// }
-// getData()
-//   },[])
+  const [cardNumberComplete, setCardNumberComplete] = useState(false);
+  const [cvcComplete, setCvcComplete] = useState(false);
+  const [expiryComplete, setExpiryComplete] = useState(false);
+  const cardNumberElementRef = useRef(null);
+  const cvcElementRef = useRef(null);
+  const expiryElementRef = useRef(null);
 
+  // useEffect(() => {
+  //   if (elements) {
+  //     cardNumberElementRef.current = elements.create('cardNumber');
+  //     cardNumberElementRef.current.mount('#card-number-container');
+
+  //     cvcElementRef.current = elements.create('cardCvc');
+  //     cvcElementRef.current.mount('#card-cvc-container');
+
+  //     expiryElementRef.current = elements.create('cardExpiry');
+  //     expiryElementRef.current.mount('#card-expiry-container');
+
+  //     const handleCardNumberChange = (event) => {
+
+        
+  //       console.log(event);
+        
+  //       setCardNumberComplete(event.complete);
+  //       setCardType(event.brand)
+
+  //       if(event.brand==="visa"){
+  //         setNumber(42)
+  //       }
+  //      else if(event.brand==="mastercard"){
+  //         setNumber(55)
+  //       }
+  //       else if(event.brand==="diners"){
+  //         setNumber(36)
+  //       }
+  //       else if(event.brand==="discover"){
+  //         setNumber(6011)
+  //       }
+  //       else if(event.brand==="hipercard"){
+  //         setNumber(60)
+  //       }
+
+    
+  //     };
+
+  //     const handleCvcChange = (event) => {
+  //       setCvcComplete(event.complete);
+  //     };
+
+  //     const handleExpiryChange = (event) => {
+  //       setExpiryComplete(event.complete);
+  //     };
+
+  //     cardNumberElementRef.current.on('change', handleCardNumberChange);
+  //     cvcElementRef.current.on('change', handleCvcChange);
+  //     expiryElementRef.current.on('change', handleExpiryChange);
+
+
+  //     cardNumberElementRef.current.on('focus', ()=>{setFocused("number")});
+  //     cvcElementRef.current.on('focus', ()=>{setFocused("cvc")});
+  //     expiryElementRef.current.on('focus', ()=>{setFocused("expiry")});
+
+  //     return () => {
+        
+  //       cardNumberElementRef.current.off('change', handleCardNumberChange);
+  //       cardNumberElementRef.current.unmount();
+
+  //       cvcElementRef.current.off('change', handleCvcChange);
+  //       cvcElementRef.current.unmount();
+
+  //       expiryElementRef.current.off('change', handleExpiryChange);
+  //       expiryElementRef.current.unmount();
+  //     };
+  //   }
+  // }, [elements]);
   
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // console.log(elements.getElement('card'));
     
     const {error, paymentMethod} = await stripe.createPaymentMethod({
       type: "card",
@@ -115,7 +221,7 @@ export default function PaymentForm() {
 
       try {
         const {id} = paymentMethod
-        const response = await axios.post("http://localhost:7008/payment", {
+        const response = await axios.post(`${constants.baseURL}/payment`, {
           amount: price * 100,
           id: id
         })
@@ -141,10 +247,14 @@ export default function PaymentForm() {
   }
 
   const handleInputFocus = ({ target }) => {
+    console.log(target.name);
     setFocused(target.name)
   }
 
-  const handleInputChange = ({ target }) => {
+  const handleInputChange = ({ target },event) => {
+
+  
+
     if (target.name === "number") {
       target.value = formatCreditCardNumber(target.value);
       setNumber(target.value)
@@ -155,9 +265,17 @@ export default function PaymentForm() {
       target.value = formatCVC(target.value);
       setCvc(target.value)
     }
+    else if (target.name === "name") {
+      setName(target.value)
+    }
+
+    setCardType(event.brand)
   };
 
   const handleChange = async (event) => {
+
+   
+    
     // Listen for changes in the CardElement
     // and display any errors as the customer types their card details
 
@@ -166,57 +284,38 @@ export default function PaymentForm() {
     // setError(event.error ? event.error.message : "");
   };
 
-  // handleSubmit = (e) => {
-  //   e.preventDefault();
-  //   const { issuer } = this.state;
-  //   const formData = [...e.target.elements]
-  //     .filter((d) => d.name)
-  //     .reduce((acc, d) => {
-  //       acc[d.name] = d.value;
-  //       return acc;
-  //     }, {});
 
-  //   this.setState({ formData });
-  //   this.form.reset();
-  // };
+
+ 
   
   const moveToTicketPage = async (e) => {
    try {
     e.preventDefault()
-    localStorage.setItem("paymentData", JSON.stringify(token));
+    setPaymentLoading(true)
 
-    const { error, paymentMethod } = await stripe.createPaymentMethod({
-      type: 'card',
-      card: elements.getElement(CardElement),
-    });
 
     
+    if (!cardNumberComplete && !cvcComplete && !expiryComplete) {
+return alert('asd')
+    }
 
-   
+    // const validation = cardNumber(newNumber);
+    // if (validation.isValid) {
+    //   setBrand(validation.card.niceType);
+    // } else {
+    //   setBrand(null);
+    // }
+    const { error, paymentMethod } = await stripe.createPaymentMethod({
+      type: 'card',
+      card: 
+      cardNumberElementRef.current,
+      metadata: {
+        ccType: 'visa',
+      },
+    });
 
-//     setClientSecret(createIntent?.data?.client_secret)
+    console.log(error,'error');
 
-//     const response = await stripe.confirmCardPayment(createIntent?.data?.client_secret,{
-//       payment_method: {
-//         card: elements.getElement(CardElement),
-//         billing_details: {
-//           name:"PrakashSparkz",
-//           address:{
-//             country:"IN"
-//           }
-//         }
-//       },
-//       client_secret:true
-//     })
-// console.log(response);
-
-// const paymentProcess = await axios.post("http://localhost:7008/payment/process-payment",{
-//   paymentMethodId:paymentMethod?.id,
-//   amount:response?.paymentIntent?.amount,
-//   currency:response?.paymentIntent?.currency
-// })
-
-// console.log(paymentProcess);
 
      if (!error) {
       console.log("Stripe 23 | token generated!",paymentMethod);
@@ -226,19 +325,29 @@ export default function PaymentForm() {
 
           setSuccess(true)
 
-          createTransaction(cardType, sum,paymentMethod)
+          createTransaction(cardType, sum,paymentMethod,userId)
             .then(response => response.data)
             .then(data => {
               console.log('created transaction', data)
               localStorage.setItem("transactionId", data.number)
-              updateMembership(userId, plan,paymentMethod)
+
+              Swal.fire({
+                title: 'Success',
+                text: "Payment Successfully Completed!",
+                icon: 'success',
+                confirmButtonText: 'OK'
+              }).then((result)=>{
+                window.location.href="/getTicket";
+              })
+              updateMembership(userId, plan,paymentMethod,type,sum)
               .then(response => response.data)
               .then(data => {
+                setPaymentLoading(false)
                 console.log('updated plan', data)
                 localStorage.setItem("ccType", cardType)
                 localStorage.setItem("paidAmount", sum)
                 localStorage.setItem("plan", plan)
-                
+                localStorage.setItem("paymentData", JSON.stringify(data));
                 window.location.href = "/getTicket"; 
                 // let { token } = data
                 // sessionStorage.setItem('authToken', token)
@@ -250,17 +359,36 @@ export default function PaymentForm() {
           
         
       } catch (error) {
+        setPaymentLoading(false)
         console.log("Error", error)
+        Swal.fire({
+          title: 'Error!',
+          text: error.message,
+          icon: 'error',
+          confirmButtonText: 'OK'
+        })
       }
     } else {
+      setPaymentLoading(false)
       console.log(error.message,'error')
+      Swal.fire({
+        title: 'Error!',
+        text: error.message,
+        icon: 'error',
+        confirmButtonText: 'OK'
+      })
     }
 
-    alert('Payment Successfully completed')
     
 
    } catch (error) {
-   alert(error.message)
+    setPaymentLoading(false)
+    Swal.fire({
+      title: 'Error!',
+      text: error.message,
+      icon: 'error',
+      confirmButtonText: 'OK'
+    })
    }
     
   };
@@ -293,6 +421,7 @@ export default function PaymentForm() {
     }
   };
 
+
   useEffect(() => {
 		const tok = sessionStorage.getItem('authToken')
 		const decoded = jwt_decode(tok)
@@ -304,7 +433,7 @@ export default function PaymentForm() {
     else
       setType("Monthly")
 
-    let currentDate = new Date().toJSON().slice(0, 10);
+    let currentDate = new Date().toLocaleDateString();
 
     let licenseplan = JSON.parse(localStorage.getItem("licenseplan"));
     console.log(licenseplan, "plan")
@@ -368,10 +497,84 @@ export default function PaymentForm() {
     setSum(_price + _price / 10.0)
 	}, [])
 
+  
+  const handleSubmitNewPayment = async(e)=>{
+    e.preventDefault()
+    console.log(number,name,expiry,cvc);
+
+ 
+
+      try {
+        if(number==="" || name==="" || expiry==="" || cvc===""){
+          return  Swal.fire({
+              title: 'Error!',
+              text: "Please, Fill the Card",
+              icon: 'error',
+              confirmButtonText: 'OK'
+            })
+          }
+        setPaymentLoading(true)
+       
+        const data = await createPaymentV2(userId,
+          plan,
+          type,
+          sum,
+          number,
+          expiry,
+          expiry,
+          cvc)
+
+         
+    
+          console.log(data);
+          if(data.data.message==="Payment successful"){
+
+            localStorage.setItem("transactionId", data.data.sendData.transactionId)
+
+            Swal.fire({
+              title: 'Success',
+              text: "Payment Successfully Completed!",
+              icon: 'success',
+              confirmButtonText: 'OK'
+            }).then((result)=>{
+              window.location.href="/getTicket";
+            })
+
+            localStorage.setItem("ccType", data.data.sendData.cardType)
+            localStorage.setItem("paidAmount", data.data.sendData.paidAmount)
+            localStorage.setItem("plan", data.data.sendData.plan)
+            localStorage.setItem("paymentData", JSON.stringify(data.data.sendData.data));
+            window.location.href = "/getTicket"; 
+    
+          }
+
+
+        
+      } catch (error) {
+        setPaymentLoading(false)
+        Swal.fire({
+          title: 'Error!',
+          text: error.message,
+          icon: 'error',
+          confirmButtonText: 'OK'
+        })
+      }finally{
+        setPaymentLoading(false)
+      }
+
+  }
+  
+
+
   return (
     <>
+
+    <Link to="/routes">
+     <button className='back-button-container'>Back</button>
+    </Link>
     {/* <ToastProvider/> */}
-    {!success ?
+    {
+    // !success ?
     // <Elements stripe={stripePromise}>
       <div className="paym">
         <div className="row">
@@ -385,29 +588,13 @@ export default function PaymentForm() {
                 cvc={cvc}
                 focused={focused}
                 callback={handleCallback}
-              />{" "}
-              <form
+               
+              />
+
+              
+               
+                        <form
                 className="credit-form"
-                onSubmit={handleSubmit}>
-                <fieldset className="FromGroup">
-                  <div className="FormRow">
-                    <CardElement options={CARD_OPTIONS} onChange={handleChange}/>
-                  </div>
-                </fieldset>{" "}
-                <div className="form-group"></div>{" "}
-                <input type="hidden" name="issuer" value={issuer} />{" "}
-                <div className="">
-                  <button
-                    onClick={(e) => moveToTicketPage(e)}
-                    className="btn btn-light btCustom"
-                  >
-                    PAY{" "}
-                  </button>{" "}
-                </div>{" "}
-              </form>
-              {/* <form
-                className="credit-form"
-                onSubmit={handleSubmit}
               >
                 <div className="form-group">
                   <input
@@ -458,14 +645,78 @@ export default function PaymentForm() {
                 </div>{" "}
                 <input type="hidden" name="issuer" value={issuer} />{" "}
                 <div className="">
-                  <button
+                {
+                    paymentLoading?
+
+                    <button
+                    onClick={(e)=>{
+                      e.preventDefault()
+                    }}
+                    className="btn btn-light btCustom"
+                  >
+                   Loading...
+                  </button>
+                    :
+                    <button
+                    onClick={(e) => handleSubmitNewPayment(e)}
+                    className="btn btn-light btCustom"
+                  >
+                    PAY{" "}
+                  </button>
+                  }
+                 
+                </div>{" "}
+              </form>
+
+              
+
+             
+    
+            
+
+               <form
+                className="credit-form"
+                // onSubmit={handleSubmit}
+                >
+                 <fieldset className="FromGroup">
+                  <div className="FormRow">
+                    {/* <div style={{transform:'translateX(10px)'}}>
+                  <div style={{border:'1px solid grey',paddingTop:'10px',width:'270px'}} className="frm-ctrl" id="card-number-container"  name="name"> </div><br/>
+
+      <div  style={{border:'1px solid grey',paddingTop:'10px',width:'270px'}} className="frm-ctrl" id="card-expiry-container" name="expiry" />      <br/>
+      <div  style={{border:'1px solid grey',paddingTop:'10px',width:'270px'}} className="frm-ctrl" id="card-cvc-container" name="cvc"  />
+      </div> */}
+                  {/* <CardElement options={CARD_OPTIONS} /> */}
+                  {/* <CardNumberElement options={CARD_OPTIONS} onChange={handleChange} onFocus={handleInputFocus}/> */}
+                    {/* <CardElement options={CARD_OPTIONS} onChange={handleChange}  onReady={handleInputFocus}/> */}
+                 </div>
+                </fieldset>{" "} 
+                 {/* <div className="form-group"></div>{" "}
+                <input type="hidden" name="issuer" value={issuer} />{" "} */}
+                {/* <div className="">
+                  {
+                    paymentLoading?
+
+                    <button
+                    onClick={(e)=>{
+                      e.preventDefault()
+                    }}
+                    className="btn btn-light btCustom"
+                  >
+                   Loading...
+                  </button>
+                    :
+                    <button
                     onClick={(e) => moveToTicketPage(e)}
                     className="btn btn-light btCustom"
                   >
                     PAY{" "}
-                  </button>{" "}
-                </div>{" "}
-              </form>{" "} */}
+                  </button>
+                  }
+                 
+                </div>{" "} */}
+              </form> 
+             
             </div>{" "}
           </div>{" "}
           <div className="columnTwo">
@@ -485,7 +736,7 @@ export default function PaymentForm() {
                   <p className="hdng"> Licence Price </p>{" "}
                   <p className="hdng"> Tax </p> 
                     <hr className="hr3" />{" "}
-                  <p className="hdng"> Toal Sum </p>{" "}
+                  <p className="hdng"> Total Sum </p>{" "}
                 </div>{" "}
                 <div className="col-6">
                   <p className="usrName"> {name} </p>{" "}
@@ -494,10 +745,10 @@ export default function PaymentForm() {
                   <p> {plan} </p>{" "}
                     <hr className="hr3" />
                   <p> {type} </p>{" "}
-                  <p> {price} </p>{" "}
-                  <p> {tax} </p>{" "}
+                  <p> {price.toFixed(2)} </p>{" "}
+                  <p> {tax.toFixed(2)} </p>{" "}
                     <hr className="hr3" />
-                  <p> {sum}</p>{" "}
+                  <p> {sum.toFixed(2)}</p>{" "}
                   <p className="usrName"> {localStorage.getItem("start")} </p>{" "}
                   {/* <p className="usrName">
                     {" "}
@@ -515,11 +766,13 @@ export default function PaymentForm() {
         </div>{" "}
       </div>
       // </Elements>
-      :
-      <div>
-        <h2>You just bought a sweet things</h2>
-      </div>
+      // :
+      // <div>
+      //   <h2>You just bought a sweet things</h2>
+      // </div>
     } 
     </>
   )
 }
+
+export default PaymentForm

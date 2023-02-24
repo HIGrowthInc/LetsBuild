@@ -11,17 +11,14 @@ var Transaction = require('../models/Transaction')
 
 
 
-router.get('/', (req, res) => {
+router.post('/', async (req, res) => {
 	try {
-		Transaction.find(async (err, doc) => {
-			if (err) {} else {
-				if (!doc) {} else {
-					console.log('transaction list: ', doc);
 
-					res.status(201).json(doc)
-				}
-			}
-		})
+		const {user_id} = req.body
+
+		const response = await Transaction.find({user_id:user_id}).sort({ createdAt: -1 })
+
+		res.status(201).json(response)
 	} catch (e) {
 		console.log(e);
 		return res.status(500).json({
@@ -47,14 +44,20 @@ router.post('/create', jsonParser, async (req, res) => {
 		newTransaction.number = req.body.paymentMethod.id
 		newTransaction.status = true
 
-		Transaction(newTransaction).save(async(err, doc) => {
-			if (err) {} else {
-				if (!doc) {} else {
-					console.log('transaction create: ', doc)
-					res.status(200).json(doc)
-				}
-			}
-		})
+		// Transaction(newTransaction).save(async(err, doc) => {
+		// 	if (err) {} else {
+		// 		if (!doc) {} else {
+		// 			console.log('transaction create: ', doc)
+		// 			res.status(200).json(doc)
+		// 		}
+		// 	}
+		// })
+
+		const response = await Transaction.create(newTransaction)
+
+		res.status(200).json(response)
+
+
 		
 	} catch (e) {
 		console.log(e);

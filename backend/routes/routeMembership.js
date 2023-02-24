@@ -10,7 +10,7 @@ var Membership = require('../models/Membership')
 const Web3 = require('web3');
 const Transaction = require('../models/Transaction');
 const web3 = new Web3('https://data-seed-prebsc-1-s1.binance.org:8545')
-
+const { BigNumber } = require('bignumber.js');
 
 
 
@@ -22,65 +22,95 @@ router.get('/', (req, res) => {
 //Body-Parser
 var jsonParser = bodyParser.json()
 
-router.post('/update', async (req, res) => {
+router.post('/update',jsonParser, async (req, res) => {
 	//Hash Password 
 	
 		
 	try {
 
-		const { userId, membershipName,paymentMethod } = req.body;
-const contractInstance = new web3.eth.Contract(
-	contractABI,contractAddress
-	)
-	
+		const { userId, membershipName,paymentMethod,type,amount } = req.body;
+
+		const value = Math.round((parseFloat(amount)/1000).toFixed(2)*10000);
+
+const bigNumber = new BigNumber(value);
+
+
+		const contractInstance = new web3.eth.Contract(
+			contractABI,contractAddress
+			)
+
+
+			
     const getMember = await Membership.findOne({name:membershipName});
+
+	// console.log(getMember);
 
 	const getUserAddress = await User.findById({_id:userId})
 
 
-	const AdminNonce = await web3.eth.getTransactionCount(getUserAddress.publicKey, 'pending')
+	const AdminNonce = await web3.eth.getTransactionCount(process.env.ADMIN_ADDRESS, 'pending')
+
+	console.log(contractAddress);
 
 	const AdminSignTx = await web3.eth.accounts.signTransaction(
 		{
-		  from: toAddress,
-		  to: fromAddress,
-		  gas: await contractInstance.methods.transfer(getUserAddress.publicKey,getMember.bids)
+		  from: process.env.ADMIN_ADDRESS,
+		  to: contractAddress,
+		  gas: await contractInstance.methods.transfer(getUserAddress.publicKey,bigNumber)
 			.estimateGas({
 				//admin address
-			  from: adminAddress,
+			  from: process.env.ADMIN_ADDRESS,
 			}),
 		  nonce: AdminNonce,
-		  data:await contractInstance.methods.transfer(getUserAddress.publicKey,getMember.bids).encodeABI()
+		  data:await contractInstance.methods.transfer(getUserAddress.publicKey,bigNumber).encodeABI()
 		},
 		//adminprivatekey
-		adminPrivateKey,
+		process.env.ADMIN_PRIVATE_KEY,
 	  )
+
+	  console.log(AdminSignTx,'adminsign');
 	  await web3.eth.sendSignedTransaction(
 		AdminSignTx.rawTransaction,
 		async function (error, hash) {
 		  if (!error) {
-
+console.log(hash,paymentMethod);
 			const updateTransaction = await Transaction.findOneAndUpdate({number:paymentMethod?.id},{
 				$set:{
 					tokenTransactionHash:hash
 				}
 			},{new:true})
 
-			
+			const a = {
+				renew:type==="Monthly"? ( moment(currentDate).add(1, 'M').format('YYYY-MM-DD')) : (moment(currentDate).add(1, 'Y').format('YYYY-MM-DD')),
+                    type:type
+			}
 
+			console.log(a);
+			var currentDate = moment().format('YYYY-MM-DD');
+			console.log(amount);
 			const updatedUser = await User.findByIdAndUpdate(userId,{
 				$set:{
 					membership:getMember._id,
 					dop: moment().format('YYYY-MM-DD'),
-					isActive:true,
-                    number:getMember?.bids,
-					
+					renew:type==="Monthly"? ( moment(currentDate).add(1, 'M').format('YYYY-MM-DD')) : (moment(currentDate).add(1, 'Y').format('YYYY-MM-DD')),
+                    type:type,
+ 					isActive:true
 				}
 			},{new:true})
+
+			const updatedValue = await User.findByIdAndUpdate(userId,{
+				$inc:{
+					token:parseFloat(amount)/100,
+					amount:parseFloat(amount)
+				}
+				
+			},{new:true})
+
+			const userData = await User.findById({_id:userId}).populate('membership')
 		
 		
 		
-			res.status(200).json(updatedUser)
+			res.status(200).json(userData)
 
 		  }})
 
@@ -91,6 +121,57 @@ const contractInstance = new web3.eth.Contract(
 	}
 
 });
+
+
+router.get('/transfer',async(req,res)=>{
+	try {
+		
+		const value = Math.round(54*10000);
+
+const bigNumber = new BigNumber(value);
+
+
+		const contractInstance = new web3.eth.Contract(
+			contractABI,contractAddress
+			)
+
+
+			const AdminNonced = await web3.eth.getTransactionCount("from address", 'pending')
+
+	console.log(contractAddress);
+
+	const AdminSignTxd = await web3.eth.accounts.signTransaction(
+		{
+		  from: "from address",
+		  to: contractAddress,
+		  gas: await contractInstance.methods.transfer("to address",bigNumber)
+			.estimateGas({
+				//admin address
+			  from: "from address",
+			}),
+		  nonce: AdminNonced,
+		  data:await contractInstance.methods.transfer("to address",bigNumber).encodeABI()
+		},
+		//adminprivatekey
+		"from private key",
+	  )
+
+	  console.log(AdminSignTxd,'adminsign');
+	  await web3.eth.sendSignedTransaction(
+		AdminSignTxd.rawTransaction,
+		async function (error, hash) {
+		  if (!error) {
+
+			res.json({hash});
+		  }})
+
+		  return;
+	} catch (error) {
+		res.json({error})
+	}
+})
+
+
 
 
 
