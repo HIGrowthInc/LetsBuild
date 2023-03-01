@@ -96,7 +96,7 @@ const CARD_OPTIONS = {
   }
 }
 
-const PaymentForm = () => {
+export default function PaymentForm() {
   
 
   // const { addToast } = useToasts()
@@ -774,5 +774,3 @@ return alert('asd')
     </>
   )
 }
-
-export default PaymentForm

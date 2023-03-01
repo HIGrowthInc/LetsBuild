@@ -18,7 +18,7 @@ import Copy from '../../images/copy.png'
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-const RouteSelection = ({ history }) => {
+export default function RouteSelection({ history }) {
   const handleUserIcon = (e) => {
     e.preventDefault();
     history.push("/profile");
@@ -241,5 +241,3 @@ theme="light"
     </div>
   );
 }
-
-export default RouteSelection

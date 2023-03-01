@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { FaAngleDoubleDown } from "react-icons/fa";
 import './busList.css'
-const BusList = ({ value: dataInp }) => {
+export default function BusList({ value: dataInp }) {
 
     const [obj, setObj] = useState('')
     const [reset, Setreset] = useState(false)
@@ -73,5 +73,3 @@ const BusList = ({ value: dataInp }) => {
 
     )
 }
-
-export default BusList
