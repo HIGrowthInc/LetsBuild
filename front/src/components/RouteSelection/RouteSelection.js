@@ -1,4 +1,4 @@
-import React,{useEffect,useState} from "react";
+import React, { useEffect, useState } from "react";
 import RouteSelector from "../routeSelector/Routeselector";
 import SeatSelection from "../SeatSelection/SeatSelection";
 import PaymentTab from "../PaymentTab/PaymentTab";
@@ -42,25 +42,25 @@ export default function RouteSelection({ history }) {
   const [address, setAddress] = useState(null)
   const [userDoc, setUserDoc] = useState(null)
 
-    useEffect(()=>{
-      const getUserBalance = async()=>{
-        try {
-          const tok = sessionStorage.getItem('authToken')
-          if(tok){
-            const decoded = jwt_decode(tok)
-            setUserDoc(decoded?.doc)
-                  const getBalance = await axios.post(`${constants.baseURL}/token/balance`,{
-                    userAddress:decoded.doc.publicKey
-                  })
-                  setAddress(getBalance?.data?.message);
-          }
-   
-        } catch (error) {
-          console.log(error.message);
+  useEffect(() => {
+    const getUserBalance = async () => {
+      try {
+        const tok = sessionStorage.getItem('authToken')
+        if (tok) {
+          const decoded = jwt_decode(tok)
+          setUserDoc(decoded?.doc)
+          const getBalance = await axios.post(`${constants.baseURL}/token/balance`, {
+            userAddress: decoded.doc.publicKey
+          })
+          setAddress(getBalance?.data?.message);
         }
+
+      } catch (error) {
+        console.log(error.message);
       }
-      getUserBalance()
-    },[])
+    }
+    getUserBalance()
+  }, [])
 
 
 
@@ -83,24 +83,24 @@ export default function RouteSelection({ history }) {
       draggable: true,
       progress: undefined,
       theme: "light",
-      });
+    });
   };
 
 
   return (
     <div className="container">
       <ToastContainer
-position="top-center"
-autoClose={5000}
-hideProgressBar={false}
-newestOnTop={false}
-closeOnClick
-rtl={false}
-pauseOnFocusLoss
-draggable
-pauseOnHover
-theme="light"
-/>
+        position="top-center"
+        autoClose={5000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
       <div>
         <nav className="mb-4 navbar navbar-expand-lg navbar-dark bg-unique hm-gradient">
           <div
@@ -177,8 +177,8 @@ theme="light"
       <div>
         <div className="flex-container-duplicate">
           <ul
-            className="nav nav-pills" 
-            style={{ display: "flex", width: "50%"}}
+            className="nav nav-pills"
+            style={{ display: "flex", width: "50%" }}
           >
             <li className="nav-item">
               <a
@@ -203,21 +203,21 @@ theme="light"
           </ul>
           <div>
             <div className="flex-second-container">
-              <img src={JJlogo} alt="logo" style={{width:'50px',marginLeft:"20px"}}/>
-            <div>
-           <p className="blue right"> UserAddress: <span className="address black"> {userDoc?.publicKey && truncateEthAddress(userDoc?.publicKey)}</span> 
-           <span onClick={copyToClipboard}>
-            <img src={Copy} alt="copyClipboard" style={{width:'20px',cursor:'pointer',marginLeft:'5px'}}/>
-           </span>
-           </p>
-           <p className="jjtToken right"> {address}JJT 
-           {/* (<span>{userDoc?.amount && parseFloat(userDoc?.amount)?.toFixed(2)}$</span>) */}
-           </p>
-            </div>
-            
+              <img src={JJlogo} alt="logo" style={{ width: '50px', marginLeft: "20px" }} />
+              <div>
+                <p className="blue right"> UserAddress: <span className="address black"> {userDoc?.publicKey && truncateEthAddress(userDoc?.publicKey)}</span>
+                  <span onClick={copyToClipboard}>
+                    <img src={Copy} alt="copyClipboard" style={{ width: '20px', cursor: 'pointer', marginLeft: '5px' }} />
+                  </span>
+                </p>
+                <p className="jjtToken right"> {address}JJT
+                  {/* (<span>{userDoc?.amount && parseFloat(userDoc?.amount)?.toFixed(2)}$</span>) */}
+                </p>
+              </div>
+
             </div>
           </div>
-          
+
         </div>
 
         <div className="tab-content">

@@ -5,7 +5,6 @@ import PaymentForm from './PaymentForm'
 import constants from '../../constant'
 
 const PUBLIC_KEY = constants.PUBLIC_KEY;
-
 const stripeTestPromise = loadStripe(PUBLIC_KEY)
 
 export default function StripeContainer() {

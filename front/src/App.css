@@ -2,13 +2,11 @@ body {
     background: url('https://wallpaperaccess.com/full/5137775.jpg') !important;
     background-repeat: no-repeat;
     background-attachment: fixed;
-    background-size: cover;
-    background-position: center !important;
+    background-size: cover !important;
     height: auto !important;
+    /* position: fixed; */
     min-height: 100vh !important;
-     /* min-height: 200% !important;  */
     width: 100%;
-    /* backdrop-filter: blur(2px); */
     overflow-x: hidden !important;
 }
 
@@ -50,3 +48,8 @@ body {
 .back-button-container:active{
     outline: none;
 }
+@font-face {
+    font-family: "Piedra";   /*Can be any text*/
+    src: local("Piedra-Regular"),
+      url("./fonts/Piedra-Regular.ttf") format("truetype");
+  }

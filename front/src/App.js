@@ -9,7 +9,7 @@ import Signup from './components/Login-Signup/Signup'
 import Profile from './components/Profile/Profile'
 import TicketPage from './components/TicketPage/TicketPage'
 import PaymentTab from './components/PaymentTab/PaymentTab'
- import JJt from "./components/JJt/JJT"
+import JJt from "./components/JJt/JJT"
 
 import StripeContainer from './components/PaymentTab/StripeContainer';
 
@@ -18,10 +18,10 @@ function App() {
     <div className="App">
       <Router>
         <Switch>
-        <Route path="/" exact render={props => <Homepage {...props} />} />
-             <Route path="/login" render={props => <LogOrsign {...props} />} />
-        <Route path="/register" render={props => <Signup {...props} />} />
-           <Route path="/routes" exact render={props => <RouteSelection {...props} />} />
+          <Route path="/" exact render={props => <Homepage {...props} />} />
+          <Route path="/login" render={props => <LogOrsign {...props} />} />
+          <Route path="/register" render={props => <Signup {...props} />} />
+          <Route path="/routes" exact render={props => <RouteSelection {...props} />} />
           <Route path="/profile" exact render={props => <Profile {...props} />} />
           <Route path="/getTicket" exact render={props => <TicketPage {...props} />} />
           <Route path="/payment" exact render={props => <StripeContainer {...props} />} />
